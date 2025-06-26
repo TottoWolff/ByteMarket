@@ -83,20 +83,22 @@ function byte_set_layout_for_landing( $layout ) {
 
 add_action( 'wp_footer', function () {
   if ( is_page_template( 'page-landing.php' ) ) {
-echo "<style>
-  .ast-container {
-    margin-bottom: 0 !important;
-    position: relative;
+    echo "<style>
+      .ast-container {
+        margin-bottom: 0 !important;
+        position: relative;
+      }
+      .ast-container::after {
+        content: '';
+        display: block;
+        height: 60px;
+        background-color: #0C0B0B;
+        position: absolute;
+        bottom: -60px;
+        left: 0;
+        right: 0;
+        z-index: -1;
+      }
+    </style>";
   }
-  .ast-container::after {
-    content: '';
-    display: block;
-    height: 60px;
-    background-color: #0C0B0B;
-    position: absolute;
-    bottom: -60px;
-    left: 0;
-    right: 0;
-    z-index: -1;
-  }
-</style>";
+});
