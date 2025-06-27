@@ -81,24 +81,72 @@ function byte_set_layout_for_landing( $layout ) {
   return $layout;
 }
 
-add_action( 'wp_footer', function () {
-  if ( is_page_template( 'page-landing.php' ) ) {
-    echo "<style>
-      .ast-container {
-        margin-bottom: 0 !important;
-        position: relative;
-      }
-      .ast-container::after {
-        content: '';
-        display: block;
-        height: 60px;
-        background-color: #0C0B0B;
-        position: absolute;
-        bottom: -60px;
-        left: 0;
-        right: 0;
-        z-index: -1;
-      }
-    </style>";
-  }
+add_shortcode( 'product_cat_dropdown_ajax', function() {
+  ob_start();
+  ?>
+  <select id="product-cat-dropdown">
+    <option value="">Todos los productos</option>
+    <?php
+$terms = get_terms([
+  'taxonomy' => 'product_cat',
+  'hide_empty' => false,
+  'exclude' => [ get_option( 'default_product_cat' ) ],
+]);
+    foreach ( $terms as $term ) {
+      echo "<option value='{$term->slug}'>{$term->name}</option>";
+    }
+    ?>
+  </select>
+  <div id="catalog-results"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const dropdown = document.getElementById('product-cat-dropdown');
+      const results = document.getElementById('catalog-results');
+
+      dropdown.addEventListener('change', function () {
+        const slug = this.value;
+        results.innerHTML = '<p>Cargando productos...</p>';
+
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=load_products_by_cat&slug=' + slug)
+          .then(res => res.text())
+          .then(html => {
+            results.innerHTML = html;
+          });
+      });
+    });
+  </script>
+  <?php
+  return ob_get_clean();
 });
+
+add_action('wp_ajax_load_products_by_cat', 'bytemarket_load_products_by_cat');
+add_action('wp_ajax_nopriv_load_products_by_cat', 'bytemarket_load_products_by_cat');
+
+function bytemarket_load_products_by_cat() {
+  $slug = sanitize_text_field($_GET['slug']);
+  $args = [
+    'post_type' => 'product',
+    'posts_per_page' => 12,
+    'tax_query' => [[
+      'taxonomy' => 'product_cat',
+      'field'    => 'slug',
+      'terms'    => $slug,
+    ]],
+  ];
+  $query = new WP_Query($args);
+
+  if ( $query->have_posts() ) {
+    // ➜ Add default Woo wrapper
+    echo '<div class="woocommerce"><ul class="products columns-4">';
+    while ( $query->have_posts() ) {
+      $query->the_post();
+      wc_get_template_part( 'content', 'product' );
+    }
+    echo '</ul></div>';
+  } else {
+    echo '<p>No hay productos en esta categoría.</p>';
+  }
+
+  wp_die();
+}

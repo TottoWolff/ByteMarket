@@ -30,7 +30,7 @@ get_header();
 <section class="catalog-section">
   <h2>Catálogo</h2>
   <p>¿Listo para potenciar tu setup?</p>
-  <a href="/shop" class="catalog-button">Ir al catálogo</a>
+  <a href="/catalogo" class="catalog-button">Ir al catálogo</a>
 </section>
   </main>
 </div>
